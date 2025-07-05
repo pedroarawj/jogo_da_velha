@@ -1,97 +1,122 @@
-# -*- coding: utf-8 -*-
-
+from random import randint
 from jogador import Jogador
 from tabuleiro import Tabuleiro
+import copy
 
 class JogadorIA(Jogador):
-    def __init__(self, tabuleiro : Tabuleiro, tipo : int):
+    def __init__(self, tabuleiro: Tabuleiro, tipo: int):
         super().__init__(tabuleiro, tipo)
 
+    def R1(self, oponente):
+        for l in range(3):
+            for c in range(3):
+                if self.matriz[l][c] == Tabuleiro.DESCONHECIDO:
+                    self.matriz[l][c] = self.tipo
+                    if self.tabuleiro.tem_campeao() == self.tipo:
+                        self.matriz[l][c] = Tabuleiro.DESCONHECIDO
+                        return (l, c)
+                    self.matriz[l][c] = Tabuleiro.DESCONHECIDO
 
-    def getJogada(self) -> (int, int):
+                    self.matriz[l][c] = oponente
+                    if self.tabuleiro.tem_campeao() == oponente:
+                        self.matriz[l][c] = Tabuleiro.DESCONHECIDO
+                        return (l, c)
+                    self.matriz[l][c] = Tabuleiro.DESCONHECIDO
+
+
+    def R2(self):
+        #R2
+        for l in range(3):
+            for c in range(3):
+                if self.matriz[l][c] == Tabuleiro.DESCONHECIDO:
+                    simulacao = copy.deepcopy(self.matriz)
+                    simulacao[l][c] = self.tipo
+                    passos_vitoria = 0
+                    for i in range(3):
+                        # Linha
+                        if simulacao[i].count(self.tipo) == 2 and simulacao[i].count(Tabuleiro.DESCONHECIDO) == 1:
+                            passos_vitoria += 1
+                        # Coluna
+                        col = [simulacao[0][i], simulacao[1][i], simulacao[2][i]]
+                        if col.count(self.tipo) == 2 and col.count(Tabuleiro.DESCONHECIDO) == 1:
+                            passos_vitoria += 1
+                    # Diagonais
+                    diag1 = [simulacao[0][0], simulacao[1][1], simulacao[2][2]]
+                    diag2 = [simulacao[0][2], simulacao[1][1], simulacao[2][0]]
+                    if diag1.count(self.tipo) == 2 and diag1.count(Tabuleiro.DESCONHECIDO) == 1:
+                        passos_vitoria += 1
+                    if diag2.count(self.tipo) == 2 and diag2.count(Tabuleiro.DESCONHECIDO) == 1:
+                        passos_vitoria += 1
+
+                    if passos_vitoria >= 2:
+                        return (l, c)
+
+        
+    def R3(self):
+        if self.matriz[1][1] == Tabuleiro.DESCONHECIDO:
+            return (1, 1)
+
+    def R4(self, oponente):
+        #R4
+        #(0, 0) > (2, 2)
+        if self.matriz[0][0] == oponente and self.matriz[2][2] == Tabuleiro.DESCONHECIDO:
+            return (2, 2)
+        if self.matriz[2][2] == oponente and self.matriz[0][0] == Tabuleiro.DESCONHECIDO:
+            return (0, 0)
+
+        # (0, 2) > (2, 0)
+        if self.matriz[0][2] == oponente and self.matriz[2][0] == Tabuleiro.DESCONHECIDO:
+            return (2, 0)
+        if self.matriz[2][0] == oponente and self.matriz[0][2] == Tabuleiro.DESCONHECIDO:
+            return (0, 2)
+
+    def R5(self):
+        for l, c in [(0, 0), (0, 2), (2, 0), (2, 2)]:
+            if self.matriz[l][c] == Tabuleiro.DESCONHECIDO:
+                return (l, c)
+
+    def R6(self):
         lista = []
-        for l in range(0,3):
-            for c in range(0,3):
+        for l in range(3):
+            for c in range(3):
                 if self.matriz[l][c] == Tabuleiro.DESCONHECIDO:
                     lista.append((l, c))
 
-        if(len(lista) > 0):
-            p = randint(0, len(lista)-1)
-            return lista[p]
-
-from random import randint
-def getJogada(self) -> (int, int):
-    # Atalhos
-    mat = self.matriz
-    MEU = self.tipo
-    OPONENTE = 1 if MEU == 4 else 4
-
-    def linhas_colunas_diagonais():
-        """Retorna todas as linhas, colunas e diagonais com suas posições."""
-        posicoes = []
-        # Linhas
-        for i in range(3):
-            posicoes.append([(i, j) for j in range(3)])
-        # Colunas
-        for j in range(3):
-            posicoes.append([(i, j) for i in range(3)])
-        # Diagonais
-        posicoes.append([(i, i) for i in range(3)])
-        posicoes.append([(i, 2-i) for i in range(3)])
-        return posicoes
-
-    def verificar_trinca(soma_alvo, jogador_tipo):
-        for linha in linhas_colunas_diagonais():
-            valores = [mat[l][c] for l, c in linha]
-            if sum(valores) == soma_alvo and valores.count(0) == 1:
-                for l, c in linha:
-                    if mat[l][c] == 0:
-                        return (l, c)
+        if lista:
+            return lista[randint(0, len(lista) - 1)]
         return None
+        
+    def getJogada(self) -> (int, int):
+        oponente = Tabuleiro.JOGADOR_X if self.tipo == Tabuleiro.JOGADOR_0 else Tabuleiro.JOGADOR_0
 
-    # R1: Ganhar ou bloquear
-    jogada = verificar_trinca(2 * MEU, MEU)  # Ganhar
-    if jogada: return jogada
-    jogada = verificar_trinca(2 * OPONENTE, OPONENTE)  # Bloquear
-    if jogada: return jogada
+        # Regra 1
+        jogada = self.R1(oponente)
+        if jogada:
+            return jogada
 
-    # R2: Jogada que cria dois caminhos de vitória
-    for l in range(3):
-        for c in range(3):
-            if mat[l][c] == 0:
-                mat[l][c] = MEU
-                cont = 0
-                for linha in linhas_colunas_diagonais():
-                    valores = [mat[i][j] for i, j in linha]
-                    if sum(valores) == MEU and valores.count(0) == 2:
-                        cont += 1
-                mat[l][c] = 0  # desfaz simulação
-                if cont >= 2:
-                    return (l, c)
+        # Regra 2
+        jogada = self.R2()
+        if jogada:
+            return jogada
 
-    # R3: Centro
-    if mat[1][1] == 0:
-        return (1, 1)
+        # Regra 3
+        jogada = self.R3()
+        if jogada:
+            return jogada
 
-    # R4: Canto oposto
-    cantos = [(0,0), (0,2), (2,0), (2,2)]
-    opostos = {(0,0):(2,2), (0,2):(2,0), (2,0):(0,2), (2,2):(0,0)}
-    for canto in cantos:
-        if mat[canto[0]][canto[1]] == OPONENTE:
-            oposto = opostos[canto]
-            if mat[oposto[0]][oposto[1]] == 0:
-                return oposto
+        # Regra 4
+        jogada = self.R4(oponente)
+        if jogada:
+            return jogada
 
-    # R5: Qualquer canto
-    for canto in cantos:
-        if mat[canto[0]][canto[1]] == 0:
-            return canto
+        # Regra 5
+        jogada = self.R5()
+        if jogada:
+            return jogada
 
-    # R6: Qualquer casa vazia
-    for l in range(3):
-        for c in range(3):
-            if mat[l][c] == 0:
-                return (l, c)
+        # Regra 6
+        jogada = self.R6()
+        if jogada:
+            return jogada
 
-    return None  # Não há jogadas
-
+        return None
